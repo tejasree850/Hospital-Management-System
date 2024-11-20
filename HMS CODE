@@ -1,0 +1,310 @@
+#include <iostream>
+#include <cstring>
+#include <iomanip>
+using namespace std;
+
+const int MAX_DOCTORS = 100;
+const int MAX_PATIENTS = 100;
+const int MAX_APPOINTMENTS = 100;
+
+class Person {
+protected:
+    int id;
+    char name[50];
+
+public:
+    Person() : id(0) {
+        strcpy(name, "");
+    }
+
+    virtual void addDetails(int id, const char* name, const char* specialization = nullptr, int age = 0, const char* disease = nullptr) = 0;
+
+    virtual void display() const = 0;
+
+    int getId() const { return id; }
+};
+
+class Doctor : public Person {
+    char specialization[50];
+    bool available;
+
+public:
+    Doctor() : available(true) {
+        strcpy(specialization, "");
+    }
+
+    void addDetails(int did, const char* dname, const char* dspecialization, int = 0, const char* = nullptr) override {
+        id = did;
+        strcpy(name, dname);
+        strcpy(specialization, dspecialization);
+        available = true;
+    }
+
+    void updateDetails(const char* dspecialization) {
+        strcpy(specialization, dspecialization);
+    }
+
+    void setAvailability(bool avail) { available = avail; }
+
+    void display() const override {
+        cout << setw(5) << id << setw(20) << name << setw(20) << specialization
+             << setw(10) << (available ? "Yes" : "No") << endl;
+    }
+
+    bool isAvailable() const { return available; }
+};
+
+class Patient : public Person {
+    int age;
+    char disease[50];
+
+public:
+    Patient() : age(0) {
+        strcpy(disease, "");
+    }
+
+    void addDetails(int pid, const char* pname, const char* = nullptr, int page = 0, const char* pdisease = nullptr) override {
+        id = pid;
+        strcpy(name, pname);
+        age = page;
+        strcpy(disease, pdisease);
+    }
+
+    void display() const override {
+        cout << setw(5) << id << setw(20) << name << setw(10) << age
+             << setw(20) << disease << endl;
+    }
+};
+
+class Appointment {
+    int id;
+    int doctorId;
+    int patientId;
+    char time[20];
+
+public:
+    Appointment() : id(0), doctorId(0), patientId(0) {
+        strcpy(time, "");
+    }
+
+    void addAppointment(int aid, int did, int pid, const char* atime) {
+        id = aid;
+        doctorId = did;
+        patientId = pid;
+        strcpy(time, atime);
+    }
+
+    void display() const {
+        cout << setw(5) << id << setw(10) << doctorId << setw(20) << patientId
+             << setw(20) << time << endl;
+    }
+};
+
+class Billing {
+    int patientId;
+    float amount;
+
+public:
+    Billing() : patientId(0), amount(0.0f) {}
+
+    void addBill(int pid, float amt) {
+        patientId = pid;
+        amount = amt;
+    }
+
+    void display() const {
+        cout << setw(10) << patientId << setw(15) << amount << endl;
+    }
+
+    int getPatientId() const { return patientId; }
+};
+
+class Hospital {
+    Doctor doctors[MAX_DOCTORS];
+    Patient patients[MAX_PATIENTS];
+    Appointment appointments[MAX_APPOINTMENTS];
+    Billing bills[MAX_PATIENTS];
+    int doctorCount, patientCount, appointmentCount, billCount;
+
+public:
+    Hospital() : doctorCount(0), patientCount(0), appointmentCount(0), billCount(0) {}
+
+    void addDoctor() {
+        if (doctorCount >= MAX_DOCTORS) {
+            cout << "Doctor limit reached.\n";
+            return;
+        }
+        char name[50], specialization[50];
+        cout << "Enter Doctor Name: ";
+        cin.ignore();
+        cin.getline(name, 50);
+        cout << "Enter Specialization: ";
+        cin.getline(specialization, 50);
+
+        doctors[doctorCount].addDetails(doctorCount + 1, name, specialization);
+        doctorCount++;
+        cout << "Doctor added successfully.\n";
+    }
+
+    void displayDoctors() const {
+        if (doctorCount == 0) {
+            cout << "No doctors available.\n";
+            return;
+        }
+        cout << setw(5) << "ID" << setw(20) << "Name" << setw(20) << "Specialization"
+             << setw(10) << "Available\n";
+        cout << string(60, '-') << endl;
+        for (int i = 0; i < doctorCount; ++i) {
+            doctors[i].display();
+        }
+    }
+
+    void addPatient() {
+        if (patientCount >= MAX_PATIENTS) {
+            cout << "Patient limit reached.\n";
+            return;
+        }
+        char name[50], disease[50];
+        int age;
+        cout << "Enter Patient Name: ";
+        cin.ignore();
+        cin.getline(name, 50);
+        cout << "Enter Age: ";
+        cin >> age;
+        cout << "Enter Disease: ";
+        cin.ignore();
+        cin.getline(disease, 50);
+
+        patients[patientCount].addDetails(patientCount + 1, name, nullptr, age, disease);
+        patientCount++;
+        cout << "Patient added successfully.\n";
+    }
+
+    void displayPatients() const {
+        if (patientCount == 0) {
+            cout << "No patients available.\n";
+            return;
+        }
+        cout << setw(5) << "ID" << setw(20) << "Name" << setw(10) << "Age"
+             << setw(20) << "Disease\n";
+        cout << string(60, '-') << endl;
+        for (int i = 0; i < patientCount; ++i) {
+            patients[i].display();
+        }
+    }
+
+    void scheduleAppointment() {
+        if (appointmentCount >= MAX_APPOINTMENTS) {
+            cout << "Appointment limit reached.\n";
+            return;
+        }
+        int doctorId, patientId;
+        char time[20];
+        cout << "Enter Doctor ID: ";
+        cin >> doctorId;
+        cout << "Enter Patient ID: ";
+        cin >> patientId;
+        cout << "Enter Appointment Time (e.g., 10:00 AM): ";
+        cin.ignore();
+        cin.getline(time, 20);
+
+        bool doctorExists = false, patientExists = false;
+        for (int i = 0; i < doctorCount; ++i) {
+            if (doctors[i].getId() == doctorId) {
+                doctorExists = true;
+                break;
+            }
+        }
+        for (int i = 0; i < patientCount; ++i) {
+            if (patients[i].getId() == patientId) {
+                patientExists = true;
+                break;
+            }
+        }
+        if (!doctorExists || !patientExists) {
+            cout << "Invalid Doctor or Patient ID.\n";
+            return;
+        }
+
+        appointments[appointmentCount].addAppointment(appointmentCount + 1, doctorId, patientId, time);
+        appointmentCount++;
+        cout << "Appointment scheduled successfully.\n";
+    }
+
+    void displayAppointments() const {
+        if (appointmentCount == 0) {
+            cout << "No appointments scheduled.\n";
+            return;
+        }
+        cout << setw(5) << "ID" << setw(10) << "DocID" << setw(20) << "PatID"
+             << setw(20) << "Time\n";
+        cout << string(50, '-') << endl;
+        for (int i = 0; i < appointmentCount; ++i) {
+            appointments[i].display();
+        }
+    }
+
+    void generateBill() {
+        if (billCount >= MAX_PATIENTS) {
+            cout << "Billing limit reached.\n";
+            return;
+        }
+        int patientId;
+        float amount;
+        cout << "Enter Patient ID: ";
+        cin >> patientId;
+        cout << "Enter Bill Amount: ";
+        cin >> amount;
+
+        bills[billCount].addBill(patientId, amount);
+        billCount++;
+        cout << "Bill generated successfully.\n";
+    }
+
+    void displayBills() const {
+        if (billCount == 0) {
+            cout << "No bills available.\n";
+            return;
+        }
+        cout << setw(10) << "PatientID" << setw(15) << "Amount\n";
+        cout << string(25, '-') << endl;
+        for (int i = 0; i < billCount; ++i) {
+            bills[i].display();
+        }
+    }
+};
+
+int main() {
+    Hospital hospital;
+    int choice;
+
+    do {
+        cout << "\n--- Hospital Management System ---\n";
+        cout << "1. Add Doctor\n";
+        cout << "2. Display Doctors\n";
+        cout << "3. Add Patient\n";
+        cout << "4. Display Patients\n";
+        cout << "5. Schedule Appointment\n";
+        cout << "6. Display Appointments\n";
+        cout << "7. Generate Bill\n";
+        cout << "8. Display Bills\n";
+        cout << "0. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1: hospital.addDoctor(); break;
+        case 2: hospital.displayDoctors(); break;
+        case 3: hospital.addPatient(); break;
+        case 4: hospital.displayPatients(); break;
+        case 5: hospital.scheduleAppointment(); break;
+        case 6: hospital.displayAppointments(); break;
+        case 7: hospital.generateBill(); break;
+        case 8: hospital.displayBills(); break;
+        case 0: cout << "Exiting...\n"; break;
+        default: cout << "Invalid choice. Try again.\n";
+        }
+    } while (choice != 0);
+
+    return 0;
+}
